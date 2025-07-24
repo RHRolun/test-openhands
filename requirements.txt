@@ -1,0 +1,7 @@
+
+kfp==2.13.0
+pandas
+scikit-learn
+openpyxl
+requests
+joblib
