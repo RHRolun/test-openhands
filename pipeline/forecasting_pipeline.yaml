@@ -1,0 +1,169 @@
+# PIPELINE DEFINITION
+# Name: demand-forecasting-pipeline
+# Description: A pipeline to download demand data and train a forecasting model
+# Inputs:
+#    dataset_url: str [Default: 'https://github.com/RHRolun/simple-training-pipeline/raw/refs/heads/main/data/demand_qty_item_loc.xlsx']
+components:
+  comp-download-dataset:
+    executorLabel: exec-download-dataset
+    inputDefinitions:
+      parameters:
+        dataset_url:
+          parameterType: STRING
+    outputDefinitions:
+      artifacts:
+        output_dataset:
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
+  comp-train-model:
+    executorLabel: exec-train-model
+    inputDefinitions:
+      artifacts:
+        input_dataset:
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
+    outputDefinitions:
+      artifacts:
+        model_output:
+          artifactType:
+            schemaTitle: system.Artifact
+            schemaVersion: 0.0.1
+deploymentSpec:
+  executors:
+    exec-download-dataset:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - download_dataset
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.13.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'pandas' 'scikit-learn'\
+          \ 'openpyxl' 'requests' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef download_dataset(\n    dataset_url: str,\n    output_dataset:\
+          \ Output[Artifact]\n):\n    \"\"\"Download the dataset from the given URL\"\
+          \"\"\n    import requests\n    import pandas as pd\n\n    # Download the\
+          \ file\n    response = requests.get(dataset_url)\n    response.raise_for_status()\n\
+          \n    # Save the file\n    output_path = output_dataset.path + \".xlsx\"\
+          \n    with open(output_path, 'wb') as f:\n        f.write(response.content)\n\
+          \n    # Update the artifact path to include the .xlsx extension\n    output_dataset.path\
+          \ = output_path\n    print(f\"Dataset downloaded and saved to {output_path}\"\
+          )\n\n"
+        image: python:3.9
+    exec-train-model:
+      container:
+        args:
+        - --executor_input
+        - '{{$}}'
+        - --function_to_execute
+        - train_model
+        command:
+        - sh
+        - -c
+        - "\nif ! [ -x \"$(command -v pip)\" ]; then\n    python3 -m ensurepip ||\
+          \ python3 -m ensurepip --user || apt-get install python3-pip\nfi\n\nPIP_DISABLE_PIP_VERSION_CHECK=1\
+          \ python3 -m pip install --quiet --no-warn-script-location 'kfp==2.13.0'\
+          \ '--no-deps' 'typing-extensions>=3.7.4,<5; python_version<\"3.9\"'  &&\
+          \  python3 -m pip install --quiet --no-warn-script-location 'pandas' 'scikit-learn'\
+          \ 'joblib' 'openpyxl' && \"$0\" \"$@\"\n"
+        - sh
+        - -ec
+        - 'program_path=$(mktemp -d)
+
+
+          printf "%s" "$0" > "$program_path/ephemeral_component.py"
+
+          _KFP_RUNTIME=true python3 -m kfp.dsl.executor_main                         --component_module_path                         "$program_path/ephemeral_component.py"                         "$@"
+
+          '
+        - "\nimport kfp\nfrom kfp import dsl\nfrom kfp.dsl import *\nfrom typing import\
+          \ *\n\ndef train_model(\n    input_dataset: Input[Artifact],\n    model_output:\
+          \ Output[Artifact]\n):\n    \"\"\"Train a model on the downloaded dataset\"\
+          \"\"\n    import pandas as pd\n    from sklearn.ensemble import RandomForestRegressor\n\
+          \    from sklearn.model_selection import train_test_split\n    import joblib\n\
+          \n    # Read the Excel file\n    df = pd.read_excel(input_dataset.path)\n\
+          \n    # Basic data preprocessing\n    # Assuming the dataset has columns\
+          \ that can be used for prediction\n    # We'll use a simple approach: use\
+          \ all numeric columns except the target\n    # For this example, let's assume\
+          \ 'demand_qty' is the target variable\n    target_col = 'demand_qty'\n\n\
+          \    # Select numeric columns\n    numeric_cols = df.select_dtypes(include=['number']).columns.tolist()\n\
+          \n    # Remove target column from features if it exists\n    if target_col\
+          \ in numeric_cols:\n        feature_cols = [col for col in numeric_cols\
+          \ if col != target_col]\n    else:\n        # If target column doesn't exist,\
+          \ use all numeric columns and create a dummy target\n        feature_cols\
+          \ = numeric_cols\n        df[target_col] = df[feature_cols[0]] if feature_cols\
+          \ else 0  # Use first feature as target\n\n    # Check if we have features\
+          \ and target\n    if len(feature_cols) == 0:\n        raise ValueError(\"\
+          No numeric features found in the dataset\")\n\n    X = df[feature_cols]\n\
+          \    y = df[target_col]\n\n    # Handle missing values\n    X = X.fillna(X.mean())\n\
+          \    y = y.fillna(y.mean())\n\n    # Split the data\n    X_train, X_test,\
+          \ y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)\n\
+          \n    # Train the model\n    model = RandomForestRegressor(n_estimators=100,\
+          \ random_state=42)\n    model.fit(X_train, y_train)\n\n    # Save the model\n\
+          \    model_path = model_output.path + \".joblib\"\n    joblib.dump(model,\
+          \ model_path)\n\n    # Update the artifact path\n    model_output.path =\
+          \ model_path\n\n    # Calculate and print some metrics\n    train_score\
+          \ = model.score(X_train, y_train)\n    test_score = model.score(X_test,\
+          \ y_test)\n\n    print(f\"Training R\xB2 score: {train_score:.4f}\")\n \
+          \   print(f\"Test R\xB2 score: {test_score:.4f}\")\n    print(f\"Model saved\
+          \ to {model_path}\")\n\n"
+        image: python:3.9
+pipelineInfo:
+  description: A pipeline to download demand data and train a forecasting model
+  name: demand-forecasting-pipeline
+root:
+  dag:
+    tasks:
+      download-dataset:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-download-dataset
+        inputs:
+          parameters:
+            dataset_url:
+              componentInputParameter: dataset_url
+        taskInfo:
+          name: download-dataset
+      train-model:
+        cachingOptions:
+          enableCache: true
+        componentRef:
+          name: comp-train-model
+        dependentTasks:
+        - download-dataset
+        inputs:
+          artifacts:
+            input_dataset:
+              taskOutputArtifact:
+                outputArtifactKey: output_dataset
+                producerTask: download-dataset
+        taskInfo:
+          name: train-model
+  inputDefinitions:
+    parameters:
+      dataset_url:
+        defaultValue: https://github.com/RHRolun/simple-training-pipeline/raw/refs/heads/main/data/demand_qty_item_loc.xlsx
+        isOptional: true
+        parameterType: STRING
+schemaVersion: 2.1.0
+sdkVersion: kfp-2.13.0
