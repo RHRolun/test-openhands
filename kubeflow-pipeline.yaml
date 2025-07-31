@@ -1,0 +1,49 @@
+
+
+apiVersion: dsl.kubeflow.org/v2
+kind: Pipeline
+metadata:
+  name: demand-forecasting-pipeline
+spec:
+  pipeline:
+    name:_demand_forecasting_pipeline
+    description: A pipeline that downloads data and trains a model
+    tasks:
+      - name: Download Data
+        componentRef:
+          name: download-data
+      - name: Train Model
+        componentRef:
+          name: train-model
+    connections:
+      - from: download-data.outputs.data
+        to: train-model.inputs.data
+
+components:
+  - name: download-data
+    componentSpec:
+      inputs:
+        - name: data_path
+      outputs:
+        - name: data
+      implementation:
+        container:
+          image: alpine:3.12
+          command:
+            - sh
+            - -c
+            - mkdir -p /data && wget -O /data/demand_qty_item_loc.xlsx https://github.com/RHRolun/simple-training-pipeline/raw/refs/heads/main/data/demand_qty_item_loc.xlsx
+  - name: train-model
+    componentSpec:
+      inputs:
+        - name: data
+      outputs:
+        - name: model
+      implementation:
+        container:
+          image: python:3.10
+          command:
+            - sh
+            - -c
+            - python train.py --data_path /data/demand_qty_item_loc.xlsx
+
