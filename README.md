@@ -1,10 +1,14 @@
-# test-openhands
+# Hello World Project
 
-This repository was created by the CAI team.
+This is a simple "Hello World" project to demonstrate the basic functionality of a Python script.
+
+## Prerequisites
+
+* Python 3.x
 
 ## Getting Started
 
-To get started with this project, follow these steps:
+To run this project, you need to have Python installed.
 
 1. **Clone the repository:**
    ```bash
@@ -14,10 +18,18 @@ To get started with this project, follow these steps:
    ```bash
    cd test-openhands
    ```
-3. **Install dependencies:**
+3. **Run the script:**
    ```bash
-   npm install
+   python main.py
    ```
+
+### [main.py](main.py)
+
+This is the main script of the project. It prints "Hello, world!" to the console.
+
+```python
+print("Hello, world!")
+```
 
 ## Contributing
 
@@ -26,3 +38,8 @@ We welcome contributions! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for 
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+
+---
+
+*This repository was created from the CAI team and is a great starting point for your next project!*
+
