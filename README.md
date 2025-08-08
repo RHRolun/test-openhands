@@ -1,45 +1,52 @@
-# Hello World Project
+# Hello, world!
 
-This is a simple "Hello World" project to demonstrate the basic functionality of a Python script.
+This is a simple "Hello, world!" project to demonstrate the basic functionality of a Python script. It's a great starting point for your next project!
 
-## Prerequisites
+## Codebase
 
-* Python 3.x
+- [main.py](./main.py): The main script that prints "Hello, world!".
 
-## Getting Started
+## Set up and Run
 
-To run this project, you need to have Python installed.
+To get this project up and running, you'll need Python installed on your system.
 
 1. **Clone the repository:**
+
    ```bash
    git clone https://github.com/your-username/test-openhands.git
    ```
+
 2. **Navigate to the project directory:**
+
    ```bash
    cd test-openhands
    ```
+
 3. **Run the script:**
+
    ```bash
    python main.py
    ```
 
-### [main.py](main.py)
+## Usage
 
-This is the main script of the project. It prints "Hello, world!" to the console.
+To run the script, execute the following command in your terminal:
 
-```python
-print("Hello, world!")
+```bash
+python main.py
 ```
+
+This will print "Hello, world!" to the console.
 
 ## Contributing
 
-We welcome contributions! Please see our [CONTRIBUTING.md](CONTRIBUTING.md) for details on how to contribute.
+We welcome contributions! Please feel free to open an issue or submit a pull request.
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md) file for details.
+This project is licensed under the MIT License.
 
 ---
 
-*This repository was created from the CAI team and is a great starting point for your next project!*
+*This repository was created from the CAI team.*
 
